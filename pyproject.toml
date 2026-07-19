@@ -1,0 +1,27 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "cyberpower-ups-monitor"
+version = "0.1.0"
+description = "A self-hosted, monitoring-only CyberPower UPS dashboard"
+readme = "README.md"
+requires-python = ">=3.9"
+license = { text = "MIT" }
+authors = [{ name = "Tom Hudson" }]
+dependencies = []
+
+[project.scripts]
+ups-monitor = "ups_monitor.__main__:main"
+ups-monitor-agent = "ups_monitor.agent:main"
+
+[tool.setuptools]
+package-dir = { "" = "src" }
+include-package-data = true
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+ups_monitor = ["static/*"]

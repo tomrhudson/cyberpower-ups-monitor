@@ -1,0 +1,15 @@
+__pycache__/
+*.py[cod]
+.DS_Store
+.env
+data/
+secrets/
+config/devices.json
+*.sqlite
+*.sqlite3
+*.db
+*.pem
+*.key
+dist/
+build/
+*.egg-info/

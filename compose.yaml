@@ -1,0 +1,21 @@
+services:
+  ups-monitor:
+    build: .
+    container_name: cyberpower-ups-monitor
+    restart: unless-stopped
+    ports:
+      - "8787:8787"
+    environment:
+      UPS_MONITOR_DEVICE_CONFIG: /config/devices.json
+      UPS_MONITOR_INGEST_TOKEN_FILE: /run/secrets/ingest_token
+      UPS_MONITOR_STALE_AFTER_SECONDS: "180"
+      UPS_MONITOR_RETENTION_DAYS: "90"
+    volumes:
+      - ./data:/data
+      - ./config/devices.json:/config/devices.json:ro
+    secrets:
+      - ingest_token
+
+secrets:
+  ingest_token:
+    file: ./secrets/ingest-token

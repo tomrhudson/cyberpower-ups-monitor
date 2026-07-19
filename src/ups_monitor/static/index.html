@@ -1,0 +1,124 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta
+      name="description"
+      content="Private monitoring for the CyberPower UPS fleet."
+    />
+    <meta name="theme-color" content="#08111d" />
+    <title>CyberPower UPS Monitor</title>
+    <link rel="stylesheet" href="/assets/styles.css" />
+  </head>
+  <body>
+    <div class="page-shell">
+      <header class="topbar">
+        <a class="brand" href="/" aria-label="CyberPower UPS Monitor home">
+          <span class="brand-mark" aria-hidden="true">
+            <span></span><span></span><span></span>
+          </span>
+          <span>
+            <strong>UPS Monitor</strong>
+            <small>Homelab power fleet</small>
+          </span>
+        </a>
+        <div class="topbar-actions">
+          <span class="refresh-label" id="refreshLabel">Connecting…</span>
+          <button class="icon-button" id="refreshButton" type="button">
+            Refresh
+          </button>
+        </div>
+      </header>
+
+      <main>
+        <section class="hero" aria-labelledby="heroTitle">
+          <div>
+            <p class="eyebrow">Power overview</p>
+            <h1 id="heroTitle">Checking the fleet</h1>
+            <p class="hero-copy" id="heroCopy">
+              Waiting for the latest readings from your collector hosts.
+            </p>
+          </div>
+          <div class="fleet-stats" aria-label="Fleet status">
+            <div>
+              <span id="onlineCount">—</span>
+              <small>Reporting</small>
+            </div>
+            <div>
+              <span id="batteryCount">—</span>
+              <small>On battery</small>
+            </div>
+            <div>
+              <span id="offlineCount">—</span>
+              <small>Offline</small>
+            </div>
+          </div>
+        </section>
+
+        <section aria-labelledby="fleetHeading">
+          <div class="section-heading">
+            <div>
+              <p class="eyebrow">Live devices</p>
+              <h2 id="fleetHeading">UPS fleet</h2>
+            </div>
+            <p>Read-only monitoring</p>
+          </div>
+          <div class="device-grid" id="deviceGrid" aria-live="polite">
+            <article class="device-card skeleton-card"></article>
+            <article class="device-card skeleton-card"></article>
+            <article class="device-card skeleton-card"></article>
+          </div>
+        </section>
+
+        <section class="details-grid">
+          <article class="panel chart-panel">
+            <div class="panel-heading">
+              <div>
+                <p class="eyebrow">History</p>
+                <h2 id="chartTitle">Select a UPS</h2>
+              </div>
+              <div class="range-control" aria-label="Chart time range">
+                <button type="button" data-hours="6">6h</button>
+                <button type="button" data-hours="24" class="active">24h</button>
+                <button type="button" data-hours="168">7d</button>
+              </div>
+            </div>
+            <div class="chart-wrap">
+              <canvas
+                id="historyChart"
+                role="img"
+                aria-label="UPS battery and power history"
+              ></canvas>
+              <p class="empty-chart" id="emptyChart">
+                History appears after the first collector samples arrive.
+              </p>
+            </div>
+            <div class="chart-legend">
+              <span><i class="legend-battery"></i>Battery charge</span>
+              <span><i class="legend-power"></i>Average watts</span>
+            </div>
+          </article>
+
+          <article class="panel events-panel">
+            <div class="panel-heading">
+              <div>
+                <p class="eyebrow">PowerPanel log</p>
+                <h2>Recent events</h2>
+              </div>
+            </div>
+            <ol class="event-list" id="eventList">
+              <li class="event-empty">No events loaded yet.</li>
+            </ol>
+          </article>
+        </section>
+      </main>
+
+      <footer>
+        <span>Private Homelab service</span>
+        <span>Monitoring only · No UPS control</span>
+      </footer>
+    </div>
+    <script src="/assets/app.js" defer></script>
+  </body>
+</html>

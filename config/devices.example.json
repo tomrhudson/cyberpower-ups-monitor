@@ -1,0 +1,22 @@
+{
+  "EXAMPLE-SERIAL-001": {
+    "order": 1,
+    "name": "Rack UPS",
+    "model": "CP1500PFCRM2U",
+    "rated_va": 1500,
+    "rated_watts": 1000,
+    "location": "Network rack",
+    "loads": "Network and storage equipment",
+    "collectors": ["rack-mac"]
+  },
+  "EXAMPLE-SERIAL-002": {
+    "order": 2,
+    "name": "Office UPS",
+    "model": "AVRG750U",
+    "rated_va": 750,
+    "rated_watts": 450,
+    "location": "Office",
+    "loads": "Workstation and dock",
+    "collectors": ["office-mac"]
+  }
+}
