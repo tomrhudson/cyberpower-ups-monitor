@@ -280,6 +280,10 @@ class Database:
             device["name"] = metadata.get("name") or device.get("model")
             device["location"] = metadata.get("location")
             device["loads"] = metadata.get("loads")
+            device["role"] = metadata.get("role")
+            device["power_path"] = metadata.get("power_path")
+            device["runtime_note"] = metadata.get("runtime_note")
+            device["active"] = metadata.get("active", True) is not False
             device["expected_collectors"] = metadata.get("collectors", [])
             result.append(device)
 
@@ -348,6 +352,8 @@ class Database:
             "# TYPE ups_power_watts gauge",
         ]
         for device in devices:
+            if not device.get("active", True):
+                continue
             labels = (
                 f'serial="{escape_label(device["serial"])}",'
                 f'model="{escape_label(device["model"])}",'

@@ -11,6 +11,8 @@ or shutdown endpoint.
 
 - Fleet-wide online, on-battery, warning, stale, and offline status
 - Battery charge, estimated runtime, load, voltage, and frequency
+- Named protection roles and power paths for each active UPS
+- Inactive hardware separated from fleet health and alert counts
 - PowerPanel current-hour average watts when the UPS reports it
 - Collector identity and data freshness
 - Deduplicated PowerPanel event history
@@ -130,10 +132,18 @@ The device inventory is keyed by UPS serial number:
     "rated_watts": 1000,
     "location": "Network rack",
     "loads": "Network and storage equipment",
+    "role": "Primary rack power",
+    "power_path": "UPS → rack PDU → network and storage equipment",
+    "runtime_note": "Optional context for interpreting the runtime estimate.",
+    "active": true,
     "collectors": ["rack-mac"]
   }
 }
 ```
+
+Set `"active": false` to retain a disconnected or retired UPS in the inventory
+without counting it as an offline fleet member. Inactive units remain visible
+in a separate dashboard section and keep their stored history.
 
 Do not commit a production `devices.json` if hostnames, serial numbers, or
 location descriptions are private. It is ignored by the included `.gitignore`.

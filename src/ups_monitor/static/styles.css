@@ -280,7 +280,7 @@ h2 {
 
 .device-card {
   position: relative;
-  min-height: 320px;
+  min-height: 430px;
   padding: 22px;
   overflow: hidden;
   color: inherit;
@@ -334,6 +334,15 @@ button.device-card {
   margin: 4px 0 0;
   color: var(--muted);
   font-size: 12px;
+}
+
+.device-role {
+  margin: 6px 0 0;
+  color: var(--blue);
+  font-size: 10px;
+  font-weight: 650;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
 }
 
 .status-pill {
@@ -480,6 +489,42 @@ button.device-card {
   text-transform: uppercase;
 }
 
+.device-context {
+  display: grid;
+  gap: 10px;
+  padding-top: 15px;
+}
+
+.device-context div {
+  display: grid;
+  grid-template-columns: 72px 1fr;
+  gap: 10px;
+  align-items: baseline;
+}
+
+.device-context small {
+  color: var(--faint);
+  font-size: 9px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.device-context strong {
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 520;
+}
+
+.runtime-note {
+  margin: 14px 0 0;
+  padding: 10px 12px;
+  color: #c8d6e0;
+  border: 1px solid rgba(85, 185, 255, 0.16);
+  border-radius: 10px;
+  background: rgba(85, 185, 255, 0.07);
+  font-size: 10px;
+}
+
 .device-footer {
   display: flex;
   align-items: center;
@@ -488,6 +533,59 @@ button.device-card {
   margin-top: 16px;
   color: var(--muted);
   font-size: 10px;
+}
+
+.inactive-section {
+  margin-bottom: 36px;
+}
+
+.inactive-list {
+  display: grid;
+  gap: 10px;
+}
+
+.inactive-device {
+  display: grid;
+  grid-template-columns: minmax(220px, 0.7fr) minmax(280px, 1.3fr);
+  gap: 24px;
+  align-items: center;
+  padding: 17px 20px;
+  color: var(--muted);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: rgba(10, 21, 33, 0.55);
+}
+
+.inactive-device h3 {
+  display: inline;
+  margin: 0 0 0 9px;
+  color: var(--text);
+  font-size: 14px;
+}
+
+.inactive-device p,
+.inactive-device span {
+  display: block;
+  margin: 3px 0 0;
+  font-size: 10px;
+}
+
+.inactive-device strong {
+  color: #bdcbd5;
+  font-size: 11px;
+}
+
+.inactive-pill {
+  display: inline-block !important;
+  margin: 0 !important;
+  padding: 4px 7px;
+  color: var(--faint);
+  border-radius: 999px;
+  background: rgba(96, 120, 140, 0.12);
+  font-size: 8px !important;
+  font-weight: 700;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
 }
 
 .device-footer span:last-child {
@@ -729,7 +827,12 @@ footer {
   }
 
   .device-card {
-    min-height: 300px;
+    min-height: 420px;
+  }
+
+  .inactive-device {
+    grid-template-columns: 1fr;
+    gap: 12px;
   }
 
   .panel {
