@@ -136,6 +136,26 @@ The installer creates a hardened systemd oneshot service and timer that query
 the local NUT server once per minute. It reads telemetry only; it does not
 expose UPS commands through the dashboard.
 
+### CyberPower USB interrupt-loop troubleshooting
+
+The NUT driver should consume negligible CPU between polls. If `usbhid-ups`
+instead holds most of a CPU core and a short syscall trace shows a tight
+`pselect`/`read` loop, the UPS may be returning broken USB interrupt reports.
+Confirm the option against the installed `man usbhid-ups`, then add the
+documented flag to that device's section in `/etc/nut/ups.conf`:
+
+```ini
+[local-ups]
+  driver = usbhid-ups
+  port = auto
+  pollonly
+```
+
+Restart only that device's `nut-driver@...` unit. Verify that `ups.status`,
+battery, runtime, voltage, and load still update; `nut-server` and `nut-monitor`
+remain active; dashboard sample timestamps advance; and driver CPU stays near
+zero over several polling cycles.
+
 ## Configuration
 
 The device inventory is keyed by UPS serial number:
