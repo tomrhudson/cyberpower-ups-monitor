@@ -6,6 +6,7 @@ import json
 import platform
 import socket
 import sqlite3
+import subprocess
 import sys
 from datetime import datetime, timezone
 from pathlib import Path
@@ -20,6 +21,98 @@ DEFAULT_DB = (
     "/Applications/PowerPanel Personal.app/Contents/Frameworks/assets/"
     "PPPE_Db.db"
 )
+
+
+def read_nut(
+    ups_name: str, collector_name: str, timeout: int = 10
+) -> dict[str, Any]:
+    """Read one UPS from a local Network UPS Tools server."""
+    if not ups_name.strip():
+        raise ValueError("NUT UPS name is required")
+    try:
+        result = subprocess.run(
+            ["upsc", ups_name],
+            check=False,
+            capture_output=True,
+            text=True,
+            timeout=timeout,
+        )
+    except FileNotFoundError as error:
+        raise RuntimeError("NUT upsc command was not found") from error
+    except subprocess.TimeoutExpired as error:
+        raise RuntimeError(f"NUT query timed out for {ups_name}") from error
+    if result.returncode != 0:
+        detail = result.stderr.strip() or "unknown upsc error"
+        raise RuntimeError(f"NUT query failed for {ups_name}: {detail[:500]}")
+    return parse_nut_output(result.stdout, collector_name)
+
+
+def parse_nut_output(output: str, collector_name: str) -> dict[str, Any]:
+    values: dict[str, str] = {}
+    for line in output.splitlines():
+        key, separator, value = line.partition(":")
+        if separator:
+            values[key.strip()] = value.strip()
+
+    serial = values.get("device.serial") or values.get("ups.serial")
+    model = values.get("device.model") or values.get("ups.model")
+    if not serial or not model:
+        raise RuntimeError("NUT response is missing model or serial")
+
+    timestamp = datetime.now(timezone.utc).isoformat()
+    realpower = optional_float(values.get("ups.realpower"))
+    return {
+        "schema_version": 1,
+        "collector": {
+            "name": collector_name,
+            "hostname": socket.gethostname(),
+            "version": __version__,
+            "platform": platform.platform(),
+        },
+        "device": {
+            "serial": serial,
+            "model": model,
+            "firmware": values.get("device.firmware"),
+            "rated_va": optional_float(values.get("ups.power.nominal")),
+            "rated_watts": optional_float(values.get("ups.realpower.nominal")),
+        },
+        "sample": {
+            "timestamp": timestamp,
+            "status": map_nut_status(values.get("ups.status", "")),
+            "battery_charge": optional_float(values.get("battery.charge")),
+            "runtime_minutes": seconds_to_minutes(values.get("battery.runtime")),
+            "battery_voltage": optional_float(values.get("battery.voltage")),
+            "input_voltage": optional_float(values.get("input.voltage")),
+            "input_frequency": optional_float(values.get("input.frequency")),
+            "output_voltage": optional_float(values.get("output.voltage")),
+            "output_frequency": optional_float(values.get("output.frequency")),
+            "output_current": optional_float(values.get("output.current")),
+            "load_percent": optional_float(values.get("ups.load")),
+            "power_watts": realpower,
+            "power_observed_at": timestamp if realpower is not None else None,
+            "power_measurement": (
+                "NUT instantaneous real power" if realpower is not None else None
+            ),
+            "system_status": values.get("ups.status"),
+        },
+        "events": [],
+    }
+
+
+def map_nut_status(value: str) -> str:
+    states = set(value.upper().split())
+    if "OB" in states:
+        return "on_battery"
+    if states.intersection({"LB", "RB", "OVER", "BYPASS", "OFF", "FSD"}):
+        return "warning"
+    if "OL" in states:
+        return "online"
+    return "unknown"
+
+
+def seconds_to_minutes(value: Any) -> float | None:
+    seconds = optional_float(value)
+    return round(seconds / 60, 1) if seconds is not None else None
 
 
 def read_powerpanel(db_path: Path, collector_name: str) -> dict[str, Any]:
@@ -217,10 +310,20 @@ def run(config_path: Path) -> dict[str, Any]:
     ).strip()
     if not token:
         raise ValueError("agent token file is empty")
-    payload = read_powerpanel(
-        Path(config.get("database", DEFAULT_DB)).expanduser(),
-        str(config["collector"]),
-    )
+    source = str(config.get("source", "powerpanel")).strip().lower()
+    if source == "powerpanel":
+        payload = read_powerpanel(
+            Path(config.get("database", DEFAULT_DB)).expanduser(),
+            str(config["collector"]),
+        )
+    elif source == "nut":
+        payload = read_nut(
+            str(config.get("ups", "")),
+            str(config["collector"]),
+            int(config.get("timeout_seconds", 15)),
+        )
+    else:
+        raise ValueError(f"unsupported agent source: {source}")
     send_payload(
         str(config["server"]),
         token,

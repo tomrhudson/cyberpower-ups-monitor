@@ -1,8 +1,9 @@
 # CyberPower UPS Monitor
 
 A self-hosted, monitoring-only dashboard for multiple CyberPower UPS units.
-Small read-only collectors forward telemetry already recorded by PowerPanel
-Personal on USB-connected Macs to one responsive web interface.
+Small read-only collectors forward telemetry from PowerPanel Personal on
+USB-connected Macs or Network UPS Tools (NUT) on Linux to one responsive web
+interface.
 
 The monitor intentionally exposes no UPS command, battery-test, outlet-control,
 or shutdown endpoint.
@@ -27,7 +28,7 @@ instantaneous watt measurement. The dashboard labels it accordingly.
 ## Architecture
 
 ```text
-PowerPanel Personal DB on each Mac
+PowerPanel Personal DB on each Mac or local NUT server on Linux
         |
         | read-only collector every 60 seconds
         v
@@ -117,6 +118,23 @@ Collector files:
 - `~/Library/Application Support/CyberPower UPS Monitor/`
 - `~/Library/LaunchAgents/io.github.cyberpower-ups-monitor.agent.plist`
 - `~/Library/Logs/CyberPower UPS Monitor/`
+
+## Linux NUT collector installation
+
+Configure and verify the locally attached UPS in NUT first. Copy this
+repository and the central ingest-token file to the Linux host, then run:
+
+```bash
+sudo ./collector/linux/install.sh \
+  http://ups-monitor.internal:8787 \
+  collector-hostname \
+  local-ups@localhost \
+  /secure/path/to/ingest-token
+```
+
+The installer creates a hardened systemd oneshot service and timer that query
+the local NUT server once per minute. It reads telemetry only; it does not
+expose UPS commands through the dashboard.
 
 ## Configuration
 
