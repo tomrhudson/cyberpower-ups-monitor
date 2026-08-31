@@ -1,8 +1,9 @@
 # CyberPower UPS Monitor
 
 A self-hosted, monitoring-only dashboard for multiple CyberPower UPS units.
-Small read-only collectors forward telemetry already recorded by PowerPanel
-Personal on USB-connected Macs to one responsive web interface.
+Small read-only collectors forward telemetry from PowerPanel Personal on
+USB-connected Macs or Network UPS Tools (NUT) on Linux to one responsive web
+interface.
 
 The monitor intentionally exposes no UPS command, battery-test, outlet-control,
 or shutdown endpoint.
@@ -11,6 +12,8 @@ or shutdown endpoint.
 
 - Fleet-wide online, on-battery, warning, stale, and offline status
 - Battery charge, estimated runtime, load, voltage, and frequency
+- Named protection roles and power paths for each active UPS
+- Inactive hardware separated from fleet health and alert counts
 - PowerPanel current-hour average watts when the UPS reports it
 - Collector identity and data freshness
 - Deduplicated PowerPanel event history
@@ -25,7 +28,7 @@ instantaneous watt measurement. The dashboard labels it accordingly.
 ## Architecture
 
 ```text
-PowerPanel Personal DB on each Mac
+PowerPanel Personal DB on each Mac or local NUT server on Linux
         |
         | read-only collector every 60 seconds
         v
@@ -116,6 +119,43 @@ Collector files:
 - `~/Library/LaunchAgents/io.github.cyberpower-ups-monitor.agent.plist`
 - `~/Library/Logs/CyberPower UPS Monitor/`
 
+## Linux NUT collector installation
+
+Configure and verify the locally attached UPS in NUT first. Copy this
+repository and the central ingest-token file to the Linux host, then run:
+
+```bash
+sudo ./collector/linux/install.sh \
+  http://ups-monitor.internal:8787 \
+  collector-hostname \
+  local-ups@localhost \
+  /secure/path/to/ingest-token
+```
+
+The installer creates a hardened systemd oneshot service and timer that query
+the local NUT server once per minute. It reads telemetry only; it does not
+expose UPS commands through the dashboard.
+
+### CyberPower USB interrupt-loop troubleshooting
+
+The NUT driver should consume negligible CPU between polls. If `usbhid-ups`
+instead holds most of a CPU core and a short syscall trace shows a tight
+`pselect`/`read` loop, the UPS may be returning broken USB interrupt reports.
+Confirm the option against the installed `man usbhid-ups`, then add the
+documented flag to that device's section in `/etc/nut/ups.conf`:
+
+```ini
+[local-ups]
+  driver = usbhid-ups
+  port = auto
+  pollonly
+```
+
+Restart only that device's `nut-driver@...` unit. Verify that `ups.status`,
+battery, runtime, voltage, and load still update; `nut-server` and `nut-monitor`
+remain active; dashboard sample timestamps advance; and driver CPU stays near
+zero over several polling cycles.
+
 ## Configuration
 
 The device inventory is keyed by UPS serial number:
@@ -130,10 +170,18 @@ The device inventory is keyed by UPS serial number:
     "rated_watts": 1000,
     "location": "Network rack",
     "loads": "Network and storage equipment",
+    "role": "Primary rack power",
+    "power_path": "UPS → rack PDU → network and storage equipment",
+    "runtime_note": "Optional context for interpreting the runtime estimate.",
+    "active": true,
     "collectors": ["rack-mac"]
   }
 }
 ```
+
+Set `"active": false` to retain a disconnected or retired UPS in the inventory
+without counting it as an offline fleet member. Inactive units remain visible
+in a separate dashboard section and keep their stored history.
 
 Do not commit a production `devices.json` if hostnames, serial numbers, or
 location descriptions are private. It is ignored by the included `.gitignore`.

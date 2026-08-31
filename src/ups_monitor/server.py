@@ -164,7 +164,9 @@ class RequestHandler(BaseHTTPRequestHandler):
 
 
 def build_summary(devices: list[dict[str, Any]]) -> dict[str, Any]:
-    online = [device for device in devices if device["online"]]
+    active = [device for device in devices if device.get("active", True)]
+    inactive = [device for device in devices if not device.get("active", True)]
+    online = [device for device in active if device["online"]]
     on_battery = [
         device for device in online if device.get("status") == "on_battery"
     ]
@@ -174,12 +176,13 @@ def build_summary(devices: list[dict[str, Any]]) -> dict[str, Any]:
         if device.get("status") in {"warning", "unknown"}
     ]
     return {
-        "total": len(devices),
+        "total": len(active),
         "online": len(online),
-        "offline": len(devices) - len(online),
+        "offline": len(active) - len(online),
+        "inactive": len(inactive),
         "on_battery": len(on_battery),
         "warnings": len(warnings),
-        "all_ok": len(online) == len(devices) and not on_battery and not warnings,
+        "all_ok": len(online) == len(active) and not on_battery and not warnings,
     }
 
 

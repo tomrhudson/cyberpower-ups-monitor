@@ -59,16 +59,27 @@
         <section aria-labelledby="fleetHeading">
           <div class="section-heading">
             <div>
-              <p class="eyebrow">Live devices</p>
-              <h2 id="fleetHeading">UPS fleet</h2>
+              <p class="eyebrow">Active protection</p>
+              <h2 id="fleetHeading">Power paths</h2>
             </div>
-            <p>Read-only monitoring</p>
+            <p id="fleetCaption">Read-only monitoring</p>
           </div>
           <div class="device-grid" id="deviceGrid" aria-live="polite">
             <article class="device-card skeleton-card"></article>
             <article class="device-card skeleton-card"></article>
             <article class="device-card skeleton-card"></article>
           </div>
+        </section>
+
+        <section class="inactive-section" id="inactiveSection" hidden>
+          <div class="section-heading">
+            <div>
+              <p class="eyebrow">Inventory</p>
+              <h2>Inactive hardware</h2>
+            </div>
+            <p>Excluded from fleet health</p>
+          </div>
+          <div class="inactive-list" id="inactiveList"></div>
         </section>
 
         <section class="details-grid">

@@ -12,6 +12,9 @@ const elements = {
   batteryCount: document.querySelector("#batteryCount"),
   offlineCount: document.querySelector("#offlineCount"),
   deviceGrid: document.querySelector("#deviceGrid"),
+  fleetCaption: document.querySelector("#fleetCaption"),
+  inactiveSection: document.querySelector("#inactiveSection"),
+  inactiveList: document.querySelector("#inactiveList"),
   eventList: document.querySelector("#eventList"),
   chartTitle: document.querySelector("#chartTitle"),
   chart: document.querySelector("#historyChart"),
@@ -37,14 +40,18 @@ async function refresh() {
     state.devices = fleet.devices;
     renderSummary(summary);
 
-    if (
-      state.devices.length &&
-      !state.devices.some((device) => device.serial === state.selectedSerial)
+    const activeDevices = state.devices.filter((device) => device.active !== false);
+    if (!activeDevices.length) {
+      state.selectedSerial = null;
+    } else if (
+      activeDevices.length &&
+      !activeDevices.some((device) => device.serial === state.selectedSerial)
     ) {
-      const firstOnline = state.devices.find((device) => device.online);
-      state.selectedSerial = (firstOnline || state.devices[0]).serial;
+      const firstOnline = activeDevices.find((device) => device.online);
+      state.selectedSerial = (firstOnline || activeDevices[0]).serial;
     }
     renderDevices();
+    renderInactiveDevices();
     renderEvents(events.events);
     if (state.selectedSerial) await loadHistory();
     elements.refreshLabel.textContent = `Updated ${formatTime(new Date())}`;
@@ -70,7 +77,7 @@ function renderSummary(summary) {
   } else if (summary.all_ok) {
     elements.heroTitle.textContent = "Utility power is steady";
     elements.heroCopy.textContent =
-      "Every configured UPS is reporting normally and remains on utility power.";
+      `All ${summary.total} active UPS ${summary.total === 1 ? "path is" : "paths are"} reporting normally and remain on utility power.`;
   } else if (summary.on_battery > 0) {
     elements.heroTitle.textContent = `${summary.on_battery} UPS ${
       summary.on_battery === 1 ? "is" : "units are"
@@ -91,9 +98,13 @@ function renderSummary(summary) {
 }
 
 function renderDevices() {
+  const activeDevices = state.devices.filter((device) => device.active !== false);
   elements.deviceGrid.replaceChildren(
-    ...state.devices.map((device) => createDeviceCard(device)),
+    ...activeDevices.map((device) => createDeviceCard(device)),
   );
+  elements.fleetCaption.textContent = `${activeDevices.length} active UPS ${
+    activeDevices.length === 1 ? "path" : "paths"
+  } · read-only`;
 }
 
 function createDeviceCard(device) {
@@ -116,12 +127,19 @@ function createDeviceCard(device) {
     device.collector ||
     (device.expected_collectors || []).join(" / ") ||
     "Collector pending";
+  const role = device.role || "UPS protection";
+  const powerPath = device.power_path || device.loads || "Power path not documented";
+  const location = device.location || "Location not recorded";
+  const powerAge = device.power_observed_at
+    ? `Hour average observed ${relativeTime(device.power_observed_at)}`
+    : "No power average reported";
 
   card.innerHTML = `
     <div class="device-header">
       <div>
         <h3>${escapeHTML(device.name)}</h3>
         <p class="device-model">${escapeHTML(device.model || "Unknown model")}</p>
+        <p class="device-role">${escapeHTML(role)}</p>
       </div>
       <span class="status-pill ${escapeHTML(device.status)}">${escapeHTML(statusLabel)}</span>
     </div>
@@ -143,17 +161,32 @@ function createDeviceCard(device) {
         <small>Output</small>
       </div>
       <div>
-        <strong>${formatMetric(device.power_watts, "W")}</strong>
-        <small>Avg power</small>
+        <strong title="${escapeHTML(powerAge)}">${formatMetric(device.power_watts, "W")}</strong>
+        <small>Hour avg</small>
       </div>
       <div>
         <strong>${formatMetric(device.load_percent, "%")}</strong>
         <small>Load</small>
       </div>
     </div>
+    <div class="device-context">
+      <div>
+        <small>Power path</small>
+        <strong>${escapeHTML(powerPath)}</strong>
+      </div>
+      <div>
+        <small>Location</small>
+        <strong>${escapeHTML(location)}</strong>
+      </div>
+    </div>
+    ${
+      device.runtime_note
+        ? `<p class="runtime-note">${escapeHTML(device.runtime_note)}</p>`
+        : ""
+    }
     <div class="device-footer">
       <span>${escapeHTML(age)}</span>
-      <span title="${escapeHTML(collector)}">${escapeHTML(collector)}</span>
+      <span title="${escapeHTML(collector)}">Via ${escapeHTML(collector)}</span>
     </div>
   `;
 
@@ -163,6 +196,39 @@ function createDeviceCard(device) {
     await loadHistory();
   });
   return card;
+}
+
+function renderInactiveDevices() {
+  const inactiveDevices = state.devices.filter((device) => device.active === false);
+  elements.inactiveSection.hidden = inactiveDevices.length === 0;
+  if (!inactiveDevices.length) {
+    elements.inactiveList.replaceChildren();
+    return;
+  }
+
+  elements.inactiveList.replaceChildren(
+    ...inactiveDevices.map((device) => {
+      const item = document.createElement("article");
+      item.className = "inactive-device";
+      const lastSeen = device.received_at
+        ? `Last report ${relativeTime(device.received_at)}`
+        : "No collector report";
+      item.innerHTML = `
+        <div>
+          <span class="inactive-pill">Inactive</span>
+          <h3>${escapeHTML(device.name)}</h3>
+          <p>${escapeHTML(device.model || "Unknown model")} · ${escapeHTML(
+            device.location || "Location not recorded",
+          )}</p>
+        </div>
+        <div>
+          <strong>${escapeHTML(device.role || "Retired UPS")}</strong>
+          <span>${escapeHTML(device.loads || "No active load")} · ${escapeHTML(lastSeen)}</span>
+        </div>
+      `;
+      return item;
+    }),
+  );
 }
 
 function renderEvents(events) {
@@ -192,7 +258,7 @@ function renderEvents(events) {
 
 async function loadHistory() {
   const selected = state.devices.find(
-    (device) => device.serial === state.selectedSerial,
+    (device) => device.active !== false && device.serial === state.selectedSerial,
   );
   if (!selected) return;
   elements.chartTitle.textContent = selected.name;

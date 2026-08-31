@@ -7,6 +7,8 @@
     "rated_watts": 1000,
     "location": "Network rack",
     "loads": "Network and storage equipment",
+    "role": "Primary rack power",
+    "power_path": "UPS → rack PDU → network and storage equipment",
     "collectors": ["rack-mac"]
   },
   "EXAMPLE-SERIAL-002": {
@@ -17,6 +19,20 @@
     "rated_watts": 450,
     "location": "Office",
     "loads": "Workstation and dock",
+    "role": "Workstation protection",
+    "power_path": "UPS → workstation and dock",
     "collectors": ["office-mac"]
+  },
+  "EXAMPLE-RETIRED-003": {
+    "order": 99,
+    "name": "Retired UPS",
+    "model": "OR700LCDRM1U",
+    "rated_va": 700,
+    "rated_watts": 400,
+    "location": "Storage",
+    "loads": "No active load",
+    "role": "Inactive hardware",
+    "active": false,
+    "collectors": []
   }
 }

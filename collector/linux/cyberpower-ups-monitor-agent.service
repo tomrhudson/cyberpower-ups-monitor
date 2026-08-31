@@ -1,0 +1,17 @@
+[Unit]
+Description=Send read-only NUT telemetry to CyberPower UPS Monitor
+After=network-online.target nut-server.service
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+User=nut
+Group=nut
+WorkingDirectory=/opt/cyberpower-ups-monitor-agent
+Environment=PYTHONPATH=/opt/cyberpower-ups-monitor-agent/src
+ExecStart=/usr/bin/python3 -m ups_monitor.agent --config /etc/cyberpower-ups-monitor-agent/agent.json
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectHome=true
+ProtectSystem=strict
+UMask=0077
